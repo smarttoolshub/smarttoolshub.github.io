@@ -1,10 +1,19 @@
-<!DOCTYPE html><html lang="es">
+<!DOCTYPE html>
+<html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EduFin PRO Global</title>
+
+<!-- Manifest PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ff9800">
+
+<!-- Librerías externas -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@2.1.5/dist/tesseract.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<!-- Estilos CSS -->
 <style>
 :root{
 --bg:#1f2a44; --card:#29384f; --text:#ffffff; --primary:#0d1b2a; --accent:#ff9800; --sidebar-width:300px; --btnHover:#fb8c00;
@@ -31,10 +40,12 @@ h4,h3{color:#ffcc80;}
 </style>
 </head>
 <body>
+
 <header>
 <button onclick="toggleSidebar()">☰</button>
 <h3>EduFin PRO Global</h3>
 </header>
+
 <div class="sidebar" id="sidebar">
 <span class="closeX" onclick="toggleSidebar()">X</span>
 <h2>Menú</h2>
@@ -43,34 +54,47 @@ h4,h3{color:#ffcc80;}
 <button onclick="mostrar('historial');toggleSidebar()">Historial</button>
 <div class="toggle"><button onclick="modoOscuro()">Modo Claro/Oscuro</button></div>
 </div>
+
 <div class="main" id="main">
+
+<!-- Inicio -->
 <div id="inicio" class="card">
 <h2>Bienvenido a EduFin PRO Global</h2>
 <p>Aprende, practica y mejora tu rendimiento académico.</p>
 <div id="materiasBotones"></div>
 <div><button class="calc" onclick="mostrarTeoriaGlobal()">Teoría Global de todas las materias</button></div>
 </div>
+
+<!-- Módulo -->
 <div id="modulo" class="card" style="display:none">
 <h3 id="moduloTitulo"></h3>
 <div id="subtemasBotones"></div>
 <button class="calc" onclick="volverInicio()">X Volver al inicio</button>
 </div>
+
+<!-- Resolver -->
 <div id="resolver" class="card" style="display:none">
 <div style="text-align:right;"><button class="calc" onclick="volverModulo()" style="width:50px;padding:5px;">X</button></div>
 <h3 id="resolverTitulo"></h3>
 <div id="resolverOpciones" style="display:none;">
 <textarea id="problema" placeholder="Escribe o escanea tu problema aquí"></textarea>
 <button class="calc" onclick="resolverProblema()">Resolver Paso a Paso</button>
-<input type="file" accept="image/*" capture="camera" id="inputImagen" onchange="leerImagen(event)"><button class="calc" onclick="leerImagen(event)">Escanear</button>
+<input type="file" accept="image/*" capture="camera" id="inputImagen" onchange="leerImagen(event)">
+<button class="calc" onclick="leerImagen(event)">Escanear</button>
 </div>
 <div id="pdfDiv" style="display:none;"><button class="calc" onclick="generarPDF()">Descargar PDF</button></div>
+
 <h4>Teoría académica</h4>
 <div id="teoria" style="padding:10px; background:#1b263b; border-radius:8px; max-height:400px; overflow:auto;"></div>
+
 <h4>Preguntas de autoevaluación</h4>
 <div id="autoEval" style="padding:10px; background:#1b263b; border-radius:8px; max-height:200px; overflow:auto;"></div>
+
 <h4>Tarjetas de memoria</h4>
 <div id="flashcards"></div>
 </div>
+
+<!-- Perfil -->
 <div id="perfil" class="card" style="display:none">
 <h3>Perfil del Usuario</h3>
 <input type="text" id="nombreUsuario" placeholder="Nombre">
@@ -82,13 +106,19 @@ h4,h3{color:#ffcc80;}
 <button class="calc" onclick="guardarPerfil()">Guardar Perfil</button>
 <button class="calc" onclick="volverInicio()">X Volver al inicio</button>
 </div>
+
+<!-- Historial -->
 <div id="historial" class="card" style="display:none">
 <h3>Historial Guardado</h3>
 <div id="historialList"></div>
 <button class="calc" onclick="volverInicio()">X Volver al inicio</button>
 </div>
+
 </div>
+
+<!-- JavaScript -->
 <script>
+// --- Variables y materias ---
 const materias={
 "Matemáticas":["Aritmética","Álgebra","Geometría","Trigonometría","Cálculo","Probabilidad"],
 "Economía":["Microeconomía","Macroeconomía","Finanzas","Contabilidad","Administración"],
@@ -100,40 +130,160 @@ const materias={
 "Historia":["Antigua","Moderna","Contemporánea"],
 "Derecho":["Civil","Penal","Laboral"]
 };
+
 let sidebarOpen=false;
+let moduloActual="",subtemaActual="";
+
+// --- Funciones UI ---
 function toggleSidebar(){document.getElementById('sidebar').style.left=sidebarOpen?"-100%":"0";sidebarOpen=!sidebarOpen;}
 function mostrar(id){document.querySelectorAll('.card').forEach(c=>c.style.display='none');document.getElementById(id).style.display='block';}
+
+// --- Botones de materias ---
 const materiasBotones=document.getElementById('materiasBotones');
-for(const mat in materias){let btn=document.createElement('button');btn.className="calc";btn.innerText=mat;btn.onclick=()=>abrirModulo(mat);materiasBotones.appendChild(btn);}
-let moduloActual="",subtemaActual="";
-function abrirModulo(mat){mostrar('modulo');document.getElementById('moduloTitulo').innerText=mat;const subtemasDiv=document.getElementById('subtemasBotones');subtemasDiv.innerHTML="";materias[mat].forEach(st=>{let btn=document.createElement('button');btn.className="calc";btn.innerText=st;btn.onclick=()=>abrirResolver(mat,st);subtemasDiv.appendChild(btn);});}
-function abrirResolver(modulo,subtema){mostrar('resolver');moduloActual=modulo;subtemaActual=subtema;document.getElementById('resolverTitulo').innerText=`${modulo} - ${subtema}`;
-const practicas=["Matemáticas","Economía","Administración","Informática"];
-document.getElementById('resolverOpciones').style.display=practicas.includes(modulo)?'block':'none';
-document.getElementById('pdfDiv').style.display='none';document.getElementById('problema').value="";document.getElementById('teoria').innerHTML=cargarTeoria(modulo,subtema);
-document.getElementById('autoEval').innerHTML = generarPreguntas(modulo,subtema);
-generarFlashcards(modulo,subtema);
+for(const mat in materias){
+  let btn=document.createElement('button');
+  btn.className="calc";
+  btn.innerText=mat;
+  btn.onclick=()=>abrirModulo(mat);
+  materiasBotones.appendChild(btn);
 }
+
+// --- Abrir módulo ---
+function abrirModulo(mat){
+  mostrar('modulo');
+  document.getElementById('moduloTitulo').innerText=mat;
+  const subtemasDiv=document.getElementById('subtemasBotones');
+  subtemasDiv.innerHTML="";
+  materias[mat].forEach(st=>{
+    let btn=document.createElement('button');
+    btn.className="calc";
+    btn.innerText=st;
+    btn.onclick=()=>abrirResolver(mat,st);
+    subtemasDiv.appendChild(btn);
+  });
+}
+
+// --- Abrir resolver ---
+function abrirResolver(modulo,subtema){
+  mostrar('resolver');
+  moduloActual=modulo; subtemaActual=subtema;
+  document.getElementById('resolverTitulo').innerText=`${modulo} - ${subtema}`;
+  const practicas=["Matemáticas","Economía","Administración","Informática"];
+  document.getElementById('resolverOpciones').style.display=practicas.includes(modulo)?'block':'none';
+  document.getElementById('pdfDiv').style.display='none';
+  document.getElementById('problema').value="";
+  document.getElementById('teoria').innerHTML=cargarTeoria(modulo,subtema);
+  document.getElementById('autoEval').innerHTML=generarPreguntas(modulo,subtema);
+  generarFlashcards(modulo,subtema);
+}
+
+// --- Teoría, preguntas y flashcards ---
 function cargarTeoria(modulo,subtema){return `<p><b>${subtema}</b>: Teoría detallada de ${subtema} en ${modulo}. Incluye conceptos clave, fórmulas y ejemplos prácticos.</p>`;}
 function generarPreguntas(modulo,subtema){return `<p>Pregunta: ¿Qué aprendiste sobre ${subtema}?</p>`;}
-function generarFlashcards(modulo,subtema){let cont=document.getElementById('flashcards');cont.innerHTML='';for(let i=1;i<=3;i++){let card=document.createElement('div');card.className='flashcard';card.innerText=`${subtema} Concepto ${i}`;card.onclick=()=>{card.innerText=card.innerText.includes('Respuesta')?`${subtema} Concepto ${i}`:`${subtema} Concepto ${i} - Respuesta`;};cont.appendChild(card);}} 
-function resolverProblema(){let p=document.getElementById('problema').value;if(!p){alert("Ingresa un problema");return;}let solucion=`Paso 1: Analizar problema\nPaso 2: Aplicar fórmula\nPaso 3: Calcular resultado\nPaso 4: Verificar resultado`;
-if(!document.getElementById('resuelto')){let res=document.createElement('p');res.id="resuelto";document.getElementById('resolver').appendChild(res);}
-document.getElementById('resuelto').innerText=solucion;document.getElementById('pdfDiv').style.display='block';
-let historial=JSON.parse(localStorage.getItem('edufinHistorial')||"[]");historial.push({modulo:moduloActual,subtema:subtemaActual,problema:p,solucion:solucion,fecha:new Date().toLocaleString()});localStorage.setItem('edufinHistorial',JSON.stringify(historial));actualizarHistorial();
-let count=parseInt(localStorage.getItem('usoCount')||"0")+1;localStorage.setItem('usoCount',count);document.getElementById('usoCount').innerText=count;}
-function actualizarHistorial(){let historial=JSON.parse(localStorage.getItem('edufinHistorial')||"[]");let html="";historial.forEach(h=>html+=`<p><b>${h.fecha}</b> - ${h.modulo} / ${h.subtema}<br>Problema: ${h.problema||"N/A"}<br>Solución: ${h.solucion||"N/A"}</p>`);document.getElementById('historialList').innerHTML=html;}
+function generarFlashcards(modulo,subtema){
+  let cont=document.getElementById('flashcards'); cont.innerHTML='';
+  for(let i=1;i<=3;i++){
+    let card=document.createElement('div');
+    card.className='flashcard';
+    card.innerText=`${subtema} Concepto ${i}`;
+    card.onclick=()=>{card.innerText=card.innerText.includes('Respuesta')?`${subtema} Concepto ${i}`:`${subtema} Concepto ${i} - Respuesta`;};
+    cont.appendChild(card);
+  }
+}
+
+// --- Resolver problema ---
+function resolverProblema(){
+  let p=document.getElementById('problema').value;
+  if(!p){alert("Ingresa un problema"); return;}
+  let solucion=`Paso 1: Analizar problema\nPaso 2: Aplicar fórmula\nPaso 3: Calcular resultado\nPaso 4: Verificar resultado`;
+  if(!document.getElementById('resuelto')){
+    let res=document.createElement('p'); res.id="resuelto";
+    document.getElementById('resolver').appendChild(res);
+  }
+  document.getElementById('resuelto').innerText=solucion;
+  document.getElementById('pdfDiv').style.display='block';
+
+  // Guardar historial
+  let historial=JSON.parse(localStorage.getItem('edufinHistorial')||"[]");
+  historial.push({modulo:moduloActual,subtema:subtemaActual,problema:p,solucion:solucion,fecha:new Date().toLocaleString()});
+  localStorage.setItem('edufinHistorial',JSON.stringify(historial));
+  actualizarHistorial();
+
+  // Contador de uso
+  let count=parseInt(localStorage.getItem('usoCount')||"0")+1;
+  localStorage.setItem('usoCount',count);
+  document.getElementById('usoCount').innerText=count;
+}
+
+// --- Historial ---
+function actualizarHistorial(){
+  let historial=JSON.parse(localStorage.getItem('edufinHistorial')||"[]");
+  let html=""; historial.forEach(h=>html+=`<p><b>${h.fecha}</b> - ${h.modulo} / ${h.subtema}<br>Problema: ${h.problema||"N/A"}<br>Solución: ${h.solucion||"N/A"}</p>`);
+  document.getElementById('historialList').innerHTML=html;
+}
 actualizarHistorial();
-function generarPDF(){let { jsPDF }=window.jspdf;let doc=new jsPDF();let problema=document.getElementById('problema').value;let solucion=document.getElementById('resuelto').innerText;doc.text(`EduFin PRO - ${moduloActual} / ${subtemaActual}`,10,10);doc.text("Problema:\n"+(problema||"N/A"),10,20);doc.text("Solución:\n"+(solucion||"N/A"),10,50);doc.save(`EduFin_${moduloActual}_${subtemaActual}.pdf`);}
-function guardarPerfil(){let nombre=document.getElementById('nombreUsuario').value;let email=document.getElementById('emailUsuario').value;localStorage.setItem('nombreUsuario',nombre);localStorage.setItem('emailUsuario',email);alert("Perfil guardado!");}
+
+// --- PDF ---
+function generarPDF(){
+  let { jsPDF }=window.jspdf;
+  let doc=new jsPDF();
+  let problema=document.getElementById('problema').value;
+  let solucion=document.getElementById('resuelto').innerText;
+  doc.text(`EduFin PRO - ${moduloActual} / ${subtemaActual}`,10,10);
+  doc.text("Problema:\n"+(problema||"N/A"),10,20);
+  doc.text("Solución:\n"+(solucion||"N/A"),10,50);
+  doc.save(`EduFin_${moduloActual}_${subtemaActual}.pdf`);
+}
+
+// --- Perfil ---
+function guardarPerfil(){
+  let nombre=document.getElementById('nombreUsuario').value;
+  let email=document.getElementById('emailUsuario').value;
+  localStorage.setItem('nombreUsuario',nombre);
+  localStorage.setItem('emailUsuario',email);
+  alert("Perfil guardado!");
+}
 document.getElementById('nombreUsuario').value=localStorage.getItem('nombreUsuario')||"";
 document.getElementById('emailUsuario').value=localStorage.getItem('emailUsuario')||"";
 document.getElementById('usoCount').innerText=localStorage.getItem('usoCount')||0;
+
+// --- Navegación ---
 function volverInicio(){mostrar('inicio');}
 function volverModulo(){abrirModulo(moduloActual);}
 function modoOscuro(){document.body.classList.toggle('dark');}
-function leerImagen(e){let file=e.target.files[0];if(file){Tesseract.recognize(file,'spa',{logger:m=>console.log(m)}).then(({data:{text}})=>{document.getElementById('problema').value=text;});}}
-function mostrarTeoriaGlobal(){mostrar('resolver');document.getElementById('resolverTitulo').innerText='Teoría Global';document.getElementById('resolverOpciones').style.display='none';document.getElementById('teoria').innerHTML='';document.getElementById('autoEval').innerHTML='';document.getElementById('flashcards').innerHTML='';for(const mat in materias){document.getElementById('teoria').innerHTML+=`<h4>${mat}</h4>`;materias[mat].forEach(st=>{document.getElementById('teoria').innerHTML+=`<p><b>${st}</b>: Teoría completa y avanzada de ${st}.</p>`;});}}
+
+// --- Escaneo OCR ---
+function leerImagen(e){
+  let file=e.target.files[0];
+  if(file){
+    Tesseract.recognize(file,'spa',{logger:m=>console.log(m)})
+      .then(({data:{text}})=>{document.getElementById('problema').value=text;});
+  }
+}
+
+// --- Teoría Global ---
+function mostrarTeoriaGlobal(){
+  mostrar('resolver');
+  document.getElementById('resolverTitulo').innerText='Teoría Global';
+  document.getElementById('resolverOpciones').style.display='none';
+  document.getElementById('teoria').innerHTML='';
+  document.getElementById('autoEval').innerHTML='';
+  document.getElementById('flashcards').innerHTML='';
+  for(const mat in materias){
+    document.getElementById('teoria').innerHTML+=`<h4>${mat}</h4>`;
+    materias[mat].forEach(st=>{
+      document.getElementById('teoria').innerHTML+=`<p><b>${st}</b>: Teoría completa y avanzada de ${st}.</p>`;
+    });
+  }
+}
+
+// --- Service Worker PWA ---
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js')
+    .then(()=>console.log('Service Worker registrado'))
+    .catch(err=>console.log('Error SW:',err));
+}
 </script>
+
 </body>
 </html>
